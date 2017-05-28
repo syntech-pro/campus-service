@@ -589,7 +589,7 @@ func (service *CampusService) SetExportDirectory() error {
 }
 
 func (service *CampusService) FinancialOperation(card, operation, sum, taskid string) error {
-	reply, err := service.MakeRequest(fmt.Sprintf("<Request><FinancialOperation CampusCard=%q OperCode=%q Summa=%q TaskUniqueNumber=%q/></Request>", card, operation, sum, taskid))
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><FinancialOperation CampusNumber=%q OperCode=%q Summa=%q TaskUniqueNumber=%q/></Request>", card, operation, sum, taskid))
 	if err != nil {
 		glog.Error("Request FinancialOperation to campus service failed:", err.Error())
 		return err
