@@ -8,8 +8,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/golang/glog"
 	"io"
+
+	"github.com/golang/glog"
 )
 
 const DATA_HEADER_LENGTH = 4
@@ -48,7 +49,6 @@ type CampusConfig struct {
 	BalanceRelevance        int64
 	StatementPeriod         int64
 }
-
 
 type Status struct {
 	Code    string `xml:",attr"`
@@ -583,6 +583,25 @@ func (service *CampusService) SetExportDirectory() error {
 	}
 	if response.Status.Code != "0" {
 		glog.Errorf("Response status code of request SetExportDirectory:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
+
+func (service *CampusService) FinancialOperation(card, operation, sum, taskid string) error {
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><FinancialOperation CampusCard=%q OperCode=%q Summa=%q TaskUniqueNumber=%q/></Request>", card, operation, sum, taskid))
+	if err != nil {
+		glog.Error("Request FinancialOperation to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request FinancialOperation from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request FinancialOperation:%s Message:%s", response.Status.Code, response.Status.Message)
 		return errors.New(response.Status.Message)
 	}
 	return nil
