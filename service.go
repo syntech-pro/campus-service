@@ -54,18 +54,22 @@ type Status struct {
 	Code    string `xml:",attr"`
 	Message string `xml:",attr"`
 }
+
 type ResponseStatus struct {
 	XMLName xml.Name `xml:"Response"`
 	Status  Status
 }
-type SamReaderStatus struct {
-	Code    string `xml:",attr"`
-	Message string `xml:",attr"`
-}
+
 type ResponseSamReaderStatus struct {
 	XMLName         xml.Name `xml:"Response"`
-	SamReaderStatus SamReaderStatus
+	SamReaderStatus Status
 	Status          Status
+}
+
+type ResponseContactlessReaderStatus struct {
+	XMLName                 xml.Name `xml:"Response"`
+	ContactlessReaderStatus Status
+	Status                  Status
 }
 
 type CardBalance struct {
@@ -252,6 +256,14 @@ func (service *CampusService) initConnect() error {
 		service.Close()
 		return err
 	}
+	if service.conf.ContactlessReaderDevice != "" {
+		err = service.SetContactlessReader()
+		if err != nil {
+			glog.Error("initConnect(): SetContactlessReader fail: ", err.Error())
+			service.Close()
+			return err
+		}
+	}
 	err = service.SetAuthorizParams()
 	if err != nil {
 		glog.Error("SetAuthorizParams fail", err.Error())
@@ -407,6 +419,29 @@ func (service *CampusService) GetSamReaderStatus() error {
 	return nil
 }
 
+func (service *CampusService) GetContactlessReaderStatus() error {
+	reply, err := service.MakeRequest("<Request><GetContactlessReaderStatus/></Request>")
+	if err != nil {
+		glog.Error("GetContactlessReaderStatus(): Request GetContactlessReaderStatus to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseContactlessReaderStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("GetContactlessReaderStatus(): Error parse response of request GetContactlessReaderStatus from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Warningf("GetContactlessReaderStatus(): Response status code of request GetContactlessReaderStatus:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	if response.ContactlessReaderStatus.Code != "10" && response.ContactlessReaderStatus.Code != "11" {
+		glog.Warningf("GetContactlessReaderStatus(): Error SamReader status. Code:%s Message:%s", response.ContactlessReaderStatus.Code, response.ContactlessReaderStatus.Message)
+		return errors.New(response.ContactlessReaderStatus.Message)
+	}
+	return nil
+}
+
 func (service *CampusService) SetSamReader() error {
 	reply, err := service.MakeRequest(`<Request><SetSamReader Device="` + service.conf.SamReaderDevice + `" Type="` + service.conf.SamReaderType + `"/></Request>`)
 	if err != nil {
@@ -426,6 +461,24 @@ func (service *CampusService) SetSamReader() error {
 	return nil
 }
 
+func (service *CampusService) SetContactlessReader() error {
+	reply, err := service.MakeRequest(`<Request><SetContactlessReader Device="` + service.conf.ContactlessReaderDevice + `" Type="` + service.conf.ContactlessReaderType + `"/></Request>`)
+	if err != nil {
+		glog.Error("Request SetContactlessReader to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request SetContactlessReader from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request SetContactlessReader:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
 func (service *CampusService) AuthorizeUser() error {
 	reply, err := service.MakeRequest(`<Request><AuthorizeUser Login="` + service.conf.SamUser + `" Password="` + service.conf.SamPassword + `"/></Request>`)
 	if err != nil {
