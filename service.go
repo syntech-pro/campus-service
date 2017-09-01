@@ -30,24 +30,27 @@ type CampusService struct {
 }
 
 type CampusConfig struct {
-	Host                    string
-	CardBin                 string
-	AccountBin              string
-	SamReaderType           string
-	SamReaderDevice         string
-	SamUser                 string
-	SamPassword             string
-	ContactlessReaderType   string
-	ContactlessReaderDevice string
-	AuthHostAddress         string
-	AuthHostPort            string
-	AuthHostURITemplate     string
-	Organization            string
-	ImportDirectory         string
-	ExportDirectory         string
-	TimeoutReinit           int64
-	BalanceRelevance        int64
-	StatementPeriod         int64
+	Host                       string
+	CardBin                    string
+	AccountBin                 string
+	SamReaderType              string
+	SamReaderDevice            string
+	SamUser                    string
+	SamPassword                string
+	ContactlessReaderType      string
+	ContactlessReaderDevice    string
+	AuthHostAddress            string
+	AuthHostPort               string
+	AuthHostURITemplate        string
+	CardholdersHostAddress     string
+	CardholdersHostPort        string
+	CardholdersHostURITemplate string
+	Organization               string
+	ImportDirectory            string
+	ExportDirectory            string
+	TimeoutReinit              int64
+	BalanceRelevance           int64
+	StatementPeriod            int64
 }
 
 type Status struct {
@@ -512,6 +515,25 @@ func (service *CampusService) SetAuthorizParams() error {
 	}
 	if response.Status.Code != "0" {
 		glog.Errorf("Response status code of request AuthorizParams:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
+
+func (service *CampusService) SetServerParams() error {
+	reply, err := service.MakeRequest(`<Request><SetServerParams Host="` + service.conf.CardholdersHostAddress + `" Port="` + service.conf.CardholdersHostPort + `" UriTemplate="` + service.conf.CardholdersHostURITemplate + `"/></Request>`)
+	if err != nil {
+		glog.Error("Request SetServerParams to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request SetServerParams from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request SetServerParams:%s Message:%s", response.Status.Code, response.Status.Message)
 		return errors.New(response.Status.Message)
 	}
 	return nil
