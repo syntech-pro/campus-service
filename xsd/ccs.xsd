@@ -1,0 +1,2042 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2011 rel. 2 (http://www.altova.com) by qq (qq) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:simpleType name="UID">
+		<xs:annotation>
+			<xs:documentation>Серийный номер чипа бесконтактной карты.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:hexBinary">
+			<xs:pattern value="[0-9a-fA-F]{8}|[0-9a-fA-F]{14}|[0-9a-fA-F]{20}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Version">
+		<xs:annotation>
+			<xs:documentation>Версия.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:unsignedByte">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="255"/>
+			<xs:pattern value="\d+"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CampusCard" final="restriction">
+		<xs:annotation>
+			<xs:documentation>Кампусный номер.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="PIN">
+		<xs:annotation>
+			<xs:documentation>PIN держателя карты.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:decimal">
+			<xs:pattern value="\d{4}\d{0,8}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="OperationType">
+		<xs:annotation>
+			<xs:documentation>Тип финансовой операции.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="debit"/>
+			<xs:enumeration value="credit"/>
+			<xs:enumeration value="withdraw"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Amount">
+		<xs:restriction base="xs:unsignedInt">
+			<xs:maxInclusive value="16777215"/>
+			<xs:pattern value="\d+"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="Signature">
+		<xs:annotation>
+			<xs:documentation>Подпись файла, расчитанная на основе ключа. Рассчитывается хэш на все аттрибуты xml-файа и шифруется на ключе указанном в Key_Attribute. Результат записывается в значение элемента Signature</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="xs:hexBinary">
+					<xs:attribute name="KeyVersion" use="required">
+						<xs:annotation>
+							<xs:documentation>Номер  версии ключа.</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:minInclusive value="1"/>
+								<xs:maxInclusive value="255"/>
+								<xs:pattern value="\d+"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Request">
+		<xs:annotation>
+			<xs:documentation>Запрос на выполнение операции.от внешнего софта к службе</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice>
+				<xs:element name="Perso">
+					<xs:annotation>
+						<xs:documentation>Персонализация карты с переводом ее в активное состояние.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="UID" type="UID" use="required">
+							<xs:annotation>
+								<xs:documentation>Серийный номер чипа персонализируемой карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="ExpirationDate" use="required">
+							<xs:annotation>
+								<xs:documentation>Дата, до которой действует карта.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:date">
+									<xs:pattern value="\d{4}-\d{2}-\d{2}"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="MappingVersion" type="Version" use="required">
+							<xs:annotation>
+								<xs:documentation>Версия разметки приложения.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="KeysetVersion" type="Version" use="required">
+							<xs:annotation>
+								<xs:documentation>Версия набора ключей, используемых в приложении.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="PIN" type="PIN" use="optional">
+							<xs:annotation>
+								<xs:documentation>PIN владельца карты. Если отсутствует - в приложение не пишется.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Read">
+					<xs:annotation>
+						<xs:documentation>Чтение с карты полного набора данных.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PIN" use="optional">
+							<xs:annotation>
+								<xs:documentation>PIN держателя карты. Если отсутствует - то не проверяется.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="VerifyPin">
+					<xs:annotation>
+						<xs:documentation>Проверка PIN держателя карты. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PIN" type="PIN" use="required">
+							<xs:annotation>
+								<xs:documentation>PIN держателя карты.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="ChangePin">
+					<xs:annotation>
+						<xs:documentation>Замена PIN держателя карты. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PIN" type="PIN" use="required">
+							<xs:annotation>
+								<xs:documentation>PIN держателя карты.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Debit">
+					<xs:annotation>
+						<xs:documentation>Выполнение операции дебетования (уменьшения баланса) карты. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PIN" use="optional">
+							<xs:annotation>
+								<xs:documentation>PIN держателя карты. Если отсутствует - то не проверяется.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+							<xs:annotation>
+								<xs:documentation>Дата и время выполнения операции.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="OperationNumber" use="required">
+							<xs:annotation>
+								<xs:documentation>Номер операции на устройстве приема карт. Пишется на карту</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Amount" use="required">
+							<xs:annotation>
+								<xs:documentation>Сумма операции в копейках.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedInt">
+									<xs:maxInclusive value="16777215"/>
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Credit">
+					<xs:annotation>
+						<xs:documentation>Выполнение операции кредитования  (увеличение баланса) карты. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PIN" use="optional">
+							<xs:annotation>
+								<xs:documentation>PIN держателя карты. Если отсутствует - то не проверяется.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+							<xs:annotation>
+								<xs:documentation>Дата и время выполнения операции.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="OperationNumber" use="required">
+							<xs:annotation>
+								<xs:documentation>Номер операции на устройстве приема карт. Пишется на карту</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Amount" use="required">
+							<xs:annotation>
+								<xs:documentation>Сумма операции в копейках.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedInt">
+									<xs:maxInclusive value="16777215"/>
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="CalculateSignature">
+					<xs:annotation>
+						<xs:documentation>Вычисление подписи на данные. Если присутствует атрибут path, подписывается содержимое файла, расположенного по пути, указанном в этом атрибуте. В противном случае подписываются данные тега. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="Path">
+									<xs:annotation>
+										<xs:documentation>Путь к файлу данных, который необходимо подписать.</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="VerifySignature">
+					<xs:annotation>
+						<xs:documentation>Проверка подписи на данные. Если присутствует атрибут path, проверяется подпись на содержимое файла, расположенного по пути, указанном в этом атрибуте. В противном случае проверяется подпись на данные тега. Предварительно требуется выполнить запрос Read.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="Path">
+									<xs:annotation>
+										<xs:documentation>Путь к файлу данных, который необходимо подписать.</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+								<xs:attribute name="Signature" type="xs:hexBinary" use="required">
+									<xs:annotation>
+										<xs:documentation>Проверяемая подпись.</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="CalculateXMLSignature">
+					<xs:annotation>
+						<xs:documentation>Вычисление подписи для XML файла. Программа сформирует элемент Signature внутри файла. Если отсутсвует  атрибут path или файл, то будет ошибка</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="Path" use="required">
+									<xs:annotation>
+										<xs:documentation>Путь к XML файлу данных, в котором надо сформировать подпись.</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="VerifyXMLSignature">
+					<xs:annotation>
+						<xs:documentation>Проверка подписи для XML файла. Программа прочитает  элемент Signature внутри XML файла, и сравнит его с вновь вычисленной подписью и сообщит результат. Если отсутсвует  атрибут path или файл, то будет ошибка</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="Path" use="required">
+									<xs:annotation>
+										<xs:documentation>Путь к XML файлу данных, в котором надо проверить существующую подпись</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="RequestData">
+					<xs:annotation>
+						<xs:documentation>Запрос к ССПД на получение данных о держателе карты.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="RequestPerso">
+					<xs:annotation>
+						<xs:documentation>Запрос к ССПД на персонализацию.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType/>
+				</xs:element>
+				<xs:element name="MessagePerso">
+					<xs:annotation>
+						<xs:documentation>Сообщение в ССПД о факте персонализации.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="UID" type="UID" use="required">
+							<xs:annotation>
+								<xs:documentation>Серийный номер чипа персонализируемой карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetSamReader">
+					<xs:annotation>
+						<xs:documentation>Считыватель контактных карт, который будет использован для работы с SAM модулем.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Type" use="required">
+							<xs:annotation>
+								<xs:documentation>Тип считывателя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="PC/SC"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Device" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя устройства считывателя. 
+Для считывателей, подключаемых посредством службы Смарт-карты  это имя, возвращаемое функцией SCardListReaders().</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetContactlessReader">
+					<xs:annotation>
+						<xs:documentation>Считываетель бесконтактных карт, который будет использован для работы с кампусными картами.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Type" use="required">
+							<xs:annotation>
+								<xs:documentation>Тип считывателя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="OMNIKEY CardMan 5x21"/>
+									<xs:enumeration value="ACS ACR128U"/>
+									<xs:enumeration value="ACS ACR1281U"/>
+									<xs:enumeration value="SCM SDI01x"/>
+									<xs:enumeration value="VivoPay Kiosk II (HID)"/>
+									<xs:enumeration value="VivoPay Kiosk II (COM)"/>
+									<xs:enumeration value="ACS ACR122U"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Device" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя устройства считывателя.
+Для считывателей, подключаемых посредством службы Смарт-карты  это имя, возвращаемое функцией SCardListReaders().
+Для считываетлей подключаемых через COM порт это имя COM порта.
+Для считывателей, подключаемых как HID устройства это полный путь к HID устройству.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetImportDirectory">
+					<xs:annotation>
+						<xs:documentation>Каталог, в котором будет осуществляться поиск файлов параметров и стоп-листов.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Path" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Путь к каталогу с файлами параметров и стоп-листов.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetExportDirectory">
+					<xs:annotation>
+						<xs:documentation>Каталог, в которй будут сохраняться файлы журналов.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Path" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Путь к каталогу с файлами журналов.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetServerParams">
+					<xs:annotation>
+						<xs:documentation>Параметры подключения к серверу ССПД.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Host" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя хоста или IP адрес хоста, на котором запущен сервер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Port" use="required">
+							<xs:annotation>
+								<xs:documentation>Порт, на котором сервер ожидает входящие подключения.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:minInclusive value="1"/>
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="UriTemplate" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Шаблон URI, с помощью которого будут производиться обращения к серверу. В том месте шаблона, где должны быть данные, следует поместить строку '%s'.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SetAuthorizParams">
+					<xs:annotation>
+						<xs:documentation>Параметры подключения к серверу авторизации.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Host" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя хоста или IP адрес хоста, на котором запущен сервер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Port" use="required">
+							<xs:annotation>
+								<xs:documentation>Порт, на котором сервер ожидает входящие подключения.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:minInclusive value="1"/>
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="UriTemplate" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Шаблон URI, с помощью которого будут производиться обращения к серверу. В том месте шаблона, где должны быть данные, следует поместить строку '%s'.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="GetSamReaderStatus">
+					<xs:annotation>
+						<xs:documentation>Получение состояния считывателя SAM модуля и самого SAM модуля.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="GetContactlessReaderStatus">
+					<xs:annotation>
+						<xs:documentation>Получение состояния считывателя кампусных карт и наличия карты в поле считывателя.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="GetParamsStatus">
+					<xs:annotation>
+						<xs:documentation>Получение информации о файле параметров, используемого службой.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="GetStoplistStatus">
+					<xs:annotation>
+						<xs:documentation>Получение информации о файле стоп-листа, используемого службой.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="GetServerStatus">
+					<xs:annotation>
+						<xs:documentation>Проверка связи с сервером ССПД.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="GetAvailableRequests">
+					<xs:annotation>
+						<xs:documentation>Получение списка доступных запросов.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType/>
+				</xs:element>
+				<xs:element name="AuthorizeUser">
+					<xs:annotation>
+						<xs:documentation>Авторизация пользователя на SAM модуле.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Login" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя пользователя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Password" use="required">
+							<xs:annotation>
+								<xs:documentation>Пароль пользователя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="UnauthorizeUser">
+					<xs:annotation>
+						<xs:documentation>Сброс авторизации пользователя.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType/>
+				</xs:element>
+				<xs:element name="ChangePassword">
+					<xs:annotation>
+						<xs:documentation>Изменения пароля пользователя SAM модуля. Операция доступна только после предварительной авторизации пользователя.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Login" use="required">
+							<xs:annotation>
+								<xs:documentation>Имя пользователя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="OldPassword" use="required">
+							<xs:annotation>
+								<xs:documentation>Старый пароль пользователя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="NewPassword" use="required">
+							<xs:annotation>
+								<xs:documentation>Новый пароль пользователя.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="FinancialOperation">
+					<xs:annotation>
+						<xs:documentation>Задание на изменение баланса карты</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="TaskUniqueNumber" use="required">
+							<xs:annotation>
+								<xs:documentation>Внешний уникальный код задания, для ссылок. Сервер не проверяет код на уникальность, забота об уникальности ложитяс на внешнюю систему</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:totalDigits value="16"/>
+									<xs:fractionDigits value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="OperCode" use="required">
+							<xs:annotation>
+								<xs:documentation>Тип операции - пополнение, списание, установка лимита</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:maxLength value="16"/>
+									<xs:enumeration value="debit"/>
+									<xs:enumeration value="credit"/>
+									<xs:enumeration value="limit"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Summa" use="required">
+							<xs:annotation>
+								<xs:documentation>Сумма операции</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:fractionDigits value="2"/>
+									<xs:totalDigits value="15"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="GetAuthorisData">
+					<xs:annotation>
+						<xs:documentation>Запрос отчета об исполнении заданий </xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="PeriodStart" type="xs:dateTime" use="required">
+							<xs:annotation>
+								<xs:documentation>Начало периода</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="PeriodEnd" type="xs:dateTime" use="required">
+							<xs:annotation>
+								<xs:documentation>Конец периода</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="GetCardBalance">
+					<xs:annotation>
+						<xs:documentation>Запрос на получение текущих  балансов по картам (из последних транзакции).</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="WBRequest">
+					<xs:annotation>
+						<xs:documentation>Запрос на постановку карты в черно-белый список</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер карты</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="WBCode" use="required">
+							<xs:annotation>
+								<xs:documentation>Тип списка</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="White"/>
+									<xs:enumeration value="Black"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Response">
+		<xs:annotation>
+			<xs:documentation>Ответ с результатом выполнения операции от службы к внешнему софту.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:choice minOccurs="0">
+					<xs:element name="CardData">
+						<xs:annotation>
+							<xs:documentation>Чтение с карты полного набора данных.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="FiscalOperation" minOccurs="0" maxOccurs="2">
+									<xs:annotation>
+										<xs:documentation>Данные о последей операции увеличения и (или) уменьшения баланса.</xs:documentation>
+									</xs:annotation>
+									<xs:complexType>
+										<xs:attribute name="Type" type="OperationType" use="required">
+											<xs:annotation>
+												<xs:documentation>Тип операции.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+											<xs:annotation>
+												<xs:documentation>Дата и время операции.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="DeviceId" use="required">
+											<xs:annotation>
+												<xs:documentation>Идентификатор устройства приема карт, совершившего операцию.</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:unsignedShort">
+													<xs:minInclusive value="1"/>
+													<xs:pattern value="\d+"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="OperationNumber" use="required">
+											<xs:annotation>
+												<xs:documentation>Номер операции на устройстве приема карт.</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:unsignedShort">
+													<xs:minInclusive value="1"/>
+													<xs:pattern value="\d+"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="Amount" type="Amount" use="required">
+											<xs:annotation>
+												<xs:documentation>Сумма операции в копейках.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+							<xs:attribute name="UID" type="UID" use="required">
+								<xs:annotation>
+									<xs:documentation>Серийный номер чипа карты.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="MappingVersion" type="Version" use="required">
+								<xs:annotation>
+									<xs:documentation>Версия разметки прилоижения.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="KeysetVersion" type="Version" use="required">
+								<xs:annotation>
+									<xs:documentation>Версия набора ключей, используемых в приложении.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Кампусный номер.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="CardExpirationDate" use="required">
+								<xs:annotation>
+									<xs:documentation>Дата, до которой действует карта.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:date">
+										<xs:pattern value="\d{4}-\d{2}-\d{2}"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Activated" type="xs:boolean" use="required">
+								<xs:annotation>
+									<xs:documentation>Признак активированного приложения.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="Blocked" type="xs:boolean" use="required">
+								<xs:annotation>
+									<xs:documentation>Признак блокированного приложения.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="TransactionCounter" use="required">
+								<xs:annotation>
+									<xs:documentation>Счетчик транзакций.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedShort">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Balance" use="required">
+								<xs:annotation>
+									<xs:documentation>Баланс приложения в копейках.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedInt">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="PINPresent" type="xs:boolean" use="required">
+								<xs:annotation>
+									<xs:documentation>Признак наличия ПИН кода в приложении.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="ExpirationDate" use="optional">
+								<xs:annotation>
+									<xs:documentation>Дата, до которой действует приложение.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:date">
+										<xs:pattern value="\d{4}-\d{2}-\d{2}"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="Signature">
+						<xs:annotation>
+							<xs:documentation>Вычисление подписи на данные.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Кампусный номер.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="Signature" type="xs:hexBinary" use="required">
+								<xs:annotation>
+									<xs:documentation>Вычисленная подпись.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="SignatureData">
+						<xs:annotation>
+							<xs:documentation>Проверка подписи на данные.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Кампусный номер.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+								<xs:annotation>
+									<xs:documentation>Дата и время вычисления подписи.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="CardholderData">
+						<xs:annotation>
+							<xs:documentation>Запрос к ССПД на получение данных о держателе карты.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="PersonalData" minOccurs="0">
+									<xs:complexType>
+										<xs:attribute name="LastName" use="required">
+											<xs:annotation>
+												<xs:documentation>Фамилия</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="FirstName" use="required">
+											<xs:annotation>
+												<xs:documentation>Имя</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="MidName">
+											<xs:annotation>
+												<xs:documentation>Отчество</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="LatinName">
+											<xs:annotation>
+												<xs:documentation>Имя и фамилия на латинице</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="Sex">
+											<xs:annotation>
+												<xs:documentation>Пол</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="BirthDay">
+											<xs:annotation>
+												<xs:documentation>Дата рождения</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="BirthPlace">
+											<xs:annotation>
+												<xs:documentation>Место рождения</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="FamilyStatus">
+											<xs:annotation>
+												<xs:documentation>Семейное положение</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="SNILS">
+											<xs:annotation>
+												<xs:documentation>СНИЛС</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="INN">
+											<xs:annotation>
+												<xs:documentation>ИНН</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="EducationalData" minOccurs="0">
+									<xs:complexType>
+										<xs:attribute name="DivisionID">
+											<xs:annotation>
+												<xs:documentation>Структурное подразделение</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="GroupID">
+											<xs:annotation>
+												<xs:documentation>Номер группы</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="Speciality">
+											<xs:annotation>
+												<xs:documentation>Специальность</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DogNomer">
+											<xs:annotation>
+												<xs:documentation>Номер договора о зачислении</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="StudbiletNumber">
+											<xs:annotation>
+												<xs:documentation>Номер студбилета</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="Document" minOccurs="0">
+									<xs:complexType>
+										<xs:attribute name="DocCode">
+											<xs:annotation>
+												<xs:documentation>Тип документа</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DocSeriya">
+											<xs:annotation>
+												<xs:documentation>Серия документа</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DocNumber">
+											<xs:annotation>
+												<xs:documentation>Номер документа</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DocWhen">
+											<xs:annotation>
+												<xs:documentation>Дата выдачи документа</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DocWho">
+											<xs:annotation>
+												<xs:documentation>Наименование организации выдавшей документ</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="DocWhoCod">
+											<xs:annotation>
+												<xs:documentation>Код подразделения выдавшего документ</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="100"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="Address" minOccurs="0">
+									<xs:complexType>
+										<xs:sequence>
+											<xs:element name="RegAddress" minOccurs="0">
+												<xs:annotation>
+													<xs:documentation>Адрес регистрации</xs:documentation>
+												</xs:annotation>
+												<xs:complexType>
+													<xs:attribute name="Index" type="xs:int">
+														<xs:annotation>
+															<xs:documentation>Индекс</xs:documentation>
+														</xs:annotation>
+													</xs:attribute>
+													<xs:attribute name="Country">
+														<xs:annotation>
+															<xs:documentation>Страна</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Region">
+														<xs:annotation>
+															<xs:documentation>Регион</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Town">
+														<xs:annotation>
+															<xs:documentation>Город</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Street">
+														<xs:annotation>
+															<xs:documentation>Улица</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="House">
+														<xs:annotation>
+															<xs:documentation>Дом</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Building">
+														<xs:annotation>
+															<xs:documentation>Строение</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Flat">
+														<xs:annotation>
+															<xs:documentation>Квартира</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Phone">
+														<xs:annotation>
+															<xs:documentation>Тетелефон</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+												</xs:complexType>
+											</xs:element>
+											<xs:element name="FactAddress" minOccurs="0">
+												<xs:annotation>
+													<xs:documentation>Адрес фактический</xs:documentation>
+												</xs:annotation>
+												<xs:complexType>
+													<xs:attribute name="Index" type="xs:int">
+														<xs:annotation>
+															<xs:documentation>Индекс</xs:documentation>
+														</xs:annotation>
+													</xs:attribute>
+													<xs:attribute name="Country">
+														<xs:annotation>
+															<xs:documentation>Страна</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Region">
+														<xs:annotation>
+															<xs:documentation>Регион</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Town">
+														<xs:annotation>
+															<xs:documentation>Город</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Street">
+														<xs:annotation>
+															<xs:documentation>Улица</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="House">
+														<xs:annotation>
+															<xs:documentation>Дом</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Building">
+														<xs:annotation>
+															<xs:documentation>Строение</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Flat">
+														<xs:annotation>
+															<xs:documentation>Квартира</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Phone">
+														<xs:annotation>
+															<xs:documentation>Тетелефон</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+												</xs:complexType>
+											</xs:element>
+											<xs:element name="PostAddress" minOccurs="0">
+												<xs:annotation>
+													<xs:documentation>Адрес почтовый</xs:documentation>
+												</xs:annotation>
+												<xs:complexType>
+													<xs:attribute name="Index" type="xs:int">
+														<xs:annotation>
+															<xs:documentation>Индекс</xs:documentation>
+														</xs:annotation>
+													</xs:attribute>
+													<xs:attribute name="Country">
+														<xs:annotation>
+															<xs:documentation>Страна</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Region">
+														<xs:annotation>
+															<xs:documentation>Регион</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Town">
+														<xs:annotation>
+															<xs:documentation>Город</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Street">
+														<xs:annotation>
+															<xs:documentation>Улица</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="House">
+														<xs:annotation>
+															<xs:documentation>Дом</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Building">
+														<xs:annotation>
+															<xs:documentation>Строение</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Flat">
+														<xs:annotation>
+															<xs:documentation>Квартира</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+													<xs:attribute name="Phone">
+														<xs:annotation>
+															<xs:documentation>Тетелефон</xs:documentation>
+														</xs:annotation>
+														<xs:simpleType>
+															<xs:restriction base="xs:string">
+																<xs:maxLength value="100"/>
+															</xs:restriction>
+														</xs:simpleType>
+													</xs:attribute>
+												</xs:complexType>
+											</xs:element>
+										</xs:sequence>
+									</xs:complexType>
+								</xs:element>
+								<xs:element name="Photo" minOccurs="0"/>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="PersoData">
+						<xs:annotation>
+							<xs:documentation>Запрос к ССПД на персонализацию.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="UID" type="UID" use="required"/>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Кампусный номер.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="ExpirationDate" use="required">
+								<xs:annotation>
+									<xs:documentation>Дата, до которой действует карта.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:date">
+										<xs:pattern value="\d{4}-\d{2}-\d{2}"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="MappingVersion" type="Version" use="required">
+								<xs:annotation>
+									<xs:documentation>Версия разметки приложения.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="KeysetVersion" type="Version" use="required">
+								<xs:annotation>
+									<xs:documentation>Версия набора ключей, используемых в приложении.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="SamReaderStatus">
+						<xs:annotation>
+							<xs:documentation>Получение состояния считывателя SAM модуля и самого SAM модуля.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Code" use="required">
+								<xs:annotation>
+									<xs:documentation>Код состояния.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedByte">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Message" type="xs:string" use="required">
+								<xs:annotation>
+									<xs:documentation>Сообщение о состоянии.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="ContactlessReaderStatus">
+						<xs:annotation>
+							<xs:documentation>Получение состояния считывателя кампусных карт и наличия карты в поле считывателя.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Code" use="required">
+								<xs:annotation>
+									<xs:documentation>Код состояния.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedByte">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Message" type="xs:string" use="required">
+								<xs:annotation>
+									<xs:documentation>Сообщение о состоянии.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="ParamsStatus">
+						<xs:annotation>
+							<xs:documentation>Получение информации о файле параметров, используемых службой.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Code" use="required">
+								<xs:annotation>
+									<xs:documentation>Код состояния.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedByte">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Message" type="xs:string" use="required">
+								<xs:annotation>
+									<xs:documentation>Сообщение о состоянии.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="StoplistStatus">
+						<xs:annotation>
+							<xs:documentation>Получение информации о файле параметров, используемых службой.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Code" use="required">
+								<xs:annotation>
+									<xs:documentation>Код состояния.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedByte">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Message" type="xs:string" use="required">
+								<xs:annotation>
+									<xs:documentation>Сообщение о состоянии.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="ServerStatus">
+						<xs:annotation>
+							<xs:documentation>Проверка связи с сервером ССПД.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Code" use="required">
+								<xs:annotation>
+									<xs:documentation>Код состояния.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:unsignedByte">
+										<xs:pattern value="\d+"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="Message" type="xs:string" use="required">
+								<xs:annotation>
+									<xs:documentation>Сообщение о состоянии.</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="AvailableRequests">
+						<xs:annotation>
+							<xs:documentation>Получение списка достуных запросов.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="Request" minOccurs="0" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="Name" use="required">
+											<xs:annotation>
+												<xs:documentation>Название запроса.</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string"/>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="NeedPinVerification" type="xs:boolean" use="required">
+											<xs:annotation>
+												<xs:documentation>Флаг проверки ПИН кода перед выполнением операции.</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="AuthorisData">
+						<xs:annotation>
+							<xs:documentation>Данные об исполнении зарегистрированных на авторизационном сервере заданий</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="Data" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="CampusCard" type="CampusCard" use="required">
+											<xs:annotation>
+												<xs:documentation>Кампусный номер</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+											<xs:annotation>
+												<xs:documentation>Дата-время исходного блока заданий</xs:documentation>
+											</xs:annotation>
+										</xs:attribute>
+										<xs:attribute name="TaskUniqueNumber" use="required">
+											<xs:annotation>
+												<xs:documentation>Ссылка на уникальный код исходного задания</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:decimal">
+													<xs:totalDigits value="16"/>
+													<xs:fractionDigits value="0"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="TaskID" use="required">
+											<xs:annotation>
+												<xs:documentation>Идентификатор задания в БД авторизационного сервера</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:decimal">
+													<xs:totalDigits value="16"/>
+													<xs:fractionDigits value="0"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="OperCode" use="required">
+											<xs:annotation>
+												<xs:documentation>Тип операции - пополнение, списание, установка лимита</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:maxLength value="16"/>
+													<xs:enumeration value="debit"/>
+													<xs:enumeration value="credit"/>
+													<xs:enumeration value="limit"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="Summa" use="required">
+											<xs:annotation>
+												<xs:documentation>Сумма операции</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:decimal">
+													<xs:minInclusive value="0"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+										<xs:attribute name="State" use="required">
+											<xs:annotation>
+												<xs:documentation>Текущее состояние задания: активно, блокировано, исполнено</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:string">
+													<xs:enumeration value="Active"/>
+													<xs:enumeration value="OnHold"/>
+													<xs:enumeration value="Completed"/>
+													<xs:enumeration value="Cancelled"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:attribute>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="CardBalance">
+						<xs:annotation>
+							<xs:documentation>Банланс карт</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Кампусный номер</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="Balance" use="required">
+								<xs:annotation>
+									<xs:documentation>Баланс на карте по последней операции: (транзакции или запроса к СА). Если транзакций не найдено то система вернет баланс 0</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="15"/>
+										<xs:fractionDigits value="2"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="BalanceTime" type="xs:dateTime">
+								<xs:annotation>
+									<xs:documentation>Дата и время последней фиксации баланса если танкая транзакция найдена</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="TrnID">
+								<xs:annotation>
+									<xs:documentation>Идентификатор транзакции по которой произведен расчет баланса  если танкая транзакция найдена</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="16"/>
+										<xs:fractionDigits value="0"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="FinancialResult">
+						<xs:annotation>
+							<xs:documentation>Ответ на задание на изменение баланса карты</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="TaskUniqueNumber" use="required">
+								<xs:annotation>
+									<xs:documentation>Ссылка на исходный уникальный код задания</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="16"/>
+										<xs:fractionDigits value="0"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="TaskID">
+								<xs:annotation>
+									<xs:documentation>Идентификатор задания в БД авторизационного сервера</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="16"/>
+										<xs:fractionDigits value="0"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Номер карты</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="ErrorCode">
+								<xs:annotation>
+									<xs:documentation>Код ошибки</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="ErrorMessage">
+								<xs:annotation>
+									<xs:documentation>Сообщение об ошибке</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="WBResult">
+						<xs:annotation>
+							<xs:documentation>Ответ на постановку карты в черно-белый список</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="CampusCard" type="CampusCard" use="required">
+								<xs:annotation>
+									<xs:documentation>Номер карты</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="WBID">
+								<xs:annotation>
+									<xs:documentation>Идентификатор записи в БД авторизационного сервера</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:decimal">
+										<xs:totalDigits value="16"/>
+										<xs:fractionDigits value="0"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+							<xs:attribute name="ErrorCode">
+								<xs:annotation>
+									<xs:documentation>Код ошибки</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="ErrorMessage">
+								<xs:annotation>
+									<xs:documentation>Сообщение об ошибке</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+				</xs:choice>
+				<xs:element name="Status">
+					<xs:annotation>
+						<xs:documentation>Сообщение о возникшей в результате выполнения операции ошибке.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Code" use="required">
+							<xs:annotation>
+								<xs:documentation>Код ошибки.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Message" type="xs:string" use="required">
+							<xs:annotation>
+								<xs:documentation>Сообщение об ошибке.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Parameters">
+		<xs:annotation>
+			<xs:documentation>Набор параметров для работы службы.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="WorkingTime">
+					<xs:annotation>
+						<xs:documentation>Временной диапазон, в течение которого разрешена работа со службой.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Begin" type="xs:time" use="required">
+							<xs:annotation>
+								<xs:documentation>Время начала работы.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="End" type="xs:time" use="required">
+							<xs:annotation>
+								<xs:documentation>Время окончания работы.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="OperationPermissions">
+					<xs:annotation>
+						<xs:documentation>Список разрешенных операций, которые может выполнять служба. Если атрибут операции имеет значение true - операция разрешена. В противном случае выполнение операции запрещено.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Request" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="Name" type="xs:string" use="required"/>
+									<xs:attribute name="Enabled" type="xs:boolean" use="required"/>
+									<xs:attribute name="NeedPinVerification" type="xs:boolean" use="optional">
+										<xs:annotation>
+											<xs:documentation>Флаг проверки ПИН кода перед выполнением операции.</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="BIN" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Набор параметров, определяющих правила работы с определенными диапазонами БИН-ов.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="BINRange" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Набор параметров, определяющих правила работы с определенным диапазоном БИН-ов.</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:attribute name="Begin" use="required">
+										<xs:annotation>
+											<xs:documentation>Начальный БИН диапазона БИН-ов.</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:maxLength value="26"/>
+												<xs:minLength value="1"/>
+												<xs:pattern value="\d+"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+									<xs:attribute name="End" use="required">
+										<xs:annotation>
+											<xs:documentation>Конечный БИН диапазона БИН-ов.</xs:documentation>
+										</xs:annotation>
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:minLength value="1"/>
+												<xs:maxLength value="26"/>
+												<xs:pattern value="\d+"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+									<xs:attribute name="ForcePinVerification" type="xs:boolean" use="required">
+										<xs:annotation>
+											<xs:documentation>Флаг, задающий необходимость проверки PIN кода владельца карты при операциях списания и пополнения.</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+									<xs:attribute name="EnableCredit" type="xs:boolean" use="required">
+										<xs:annotation>
+											<xs:documentation>Флаг, разрешающий или запрещающий операцию пополнения.</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element ref="Signature"/>
+			</xs:sequence>
+			<xs:attribute name="DeviceID" use="required">
+				<xs:annotation>
+					<xs:documentation>Идентификатор устройства с SAM модуля, установленного на рабочем месте, для которого предназначен набор параметров.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:unsignedShort">
+						<xs:pattern value="\d+"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>Дата и время изготовления набора параметров.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Stoplist">
+		<xs:annotation>
+			<xs:documentation>Стоп-лист для работы службы..</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Record" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>Временной диапазон, в течение которого разрешена работа со службой.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Code" use="required">
+							<xs:annotation>
+								<xs:documentation>Код обработки (B- блокировать, N - не обслуживать).</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:length value="1"/>
+									<xs:enumeration value="B"/>
+									<xs:enumeration value="N"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element ref="Signature"/>
+			</xs:sequence>
+			<xs:attribute name="DeviceID" use="required">
+				<xs:annotation>
+					<xs:documentation>Идентификатор устройства с SAM модуля, установленного на рабочем месте, для которого предназначен набор параметров.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:unsignedShort">
+						<xs:pattern value="\d+"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>Дата и время изготовления набора параметров.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Transactions">
+		<xs:annotation>
+			<xs:documentation>Файл транзакций результат работы службы.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Transaction" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>Информация о транзакции.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="Type" use="required">
+							<xs:annotation>
+								<xs:documentation>Тип операции.
+debit - трата
+credit - пополнение
+withdraw - отмена неудачноого пополненя с авторизационного сервера
+</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="OperationType">
+									<xs:enumeration value="debit"/>
+									<xs:enumeration value="credit"/>
+									<xs:enumeration value="withdraw"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+							<xs:annotation>
+								<xs:documentation>Дата и время соврешения операции.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="OriginalAmount" type="Amount" use="required">
+							<xs:annotation>
+								<xs:documentation>Запрошенная сумма операции.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="OperationAmount" type="Amount" use="required">
+							<xs:annotation>
+								<xs:documentation>Реальная сумма операции.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="Balance" use="required">
+							<xs:annotation>
+								<xs:documentation>Баланс приложения на начало операции.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedInt">
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="UID" type="UID" use="required">
+							<xs:annotation>
+								<xs:documentation>Серийный номер чипа карты.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="CampusCard" type="CampusCard" use="required">
+							<xs:annotation>
+								<xs:documentation>Кампусный номер.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="ExpirationDate" use="required">
+							<xs:annotation>
+								<xs:documentation>Дата, до которой действует карта.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:date">
+									<xs:pattern value="\d{4}-\d{2}-\d{2}"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="TransactionCounter" use="required">
+							<xs:annotation>
+								<xs:documentation>Счетчик транзакций.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:unsignedShort">
+									<xs:pattern value="\d+"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="RRN">
+							<xs:annotation>
+								<xs:documentation>Уникальный код транзакции, переданный на авторизационный сервер</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:totalDigits value="16"/>
+									<xs:fractionDigits value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="AuthorisCode">
+							<xs:annotation>
+								<xs:documentation>Код авторизации</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:totalDigits value="16"/>
+									<xs:fractionDigits value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element ref="Signature"/>
+			</xs:sequence>
+			<xs:attribute name="DeviceID" use="required">
+				<xs:annotation>
+					<xs:documentation>Идентификатор устройства с SAM модуля, установленного на рабочем месте, породившем файл транзакций.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:unsignedShort">
+						<xs:pattern value="\d+"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="Timestamp" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>Дата и время изготовления набора параметров.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
