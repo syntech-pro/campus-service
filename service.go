@@ -283,6 +283,11 @@ func (service *CampusService) initConnect() error {
 		glog.Error("SetAuthorizParams fail", err.Error())
 		return err
 	}
+	err = service.SetServerParams()
+	if err != nil {
+		glog.Error("SetServerParams fail", err.Error())
+		return err
+	}
 	err = service.SetImportDirectory()
 	if err != nil {
 		glog.Error("SetImportDirectory fail", err.Error())
