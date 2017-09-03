@@ -482,6 +482,7 @@ func (service *CampusService) SetContactlessReader() error {
 	}
 	return nil
 }
+
 func (service *CampusService) AuthorizeUser() error {
 	reply, err := service.MakeRequest(`<Request><AuthorizeUser Login="` + service.conf.SamUser + `" Password="` + service.conf.SamPassword + `"/></Request>`)
 	if err != nil {
@@ -595,6 +596,44 @@ func (service *CampusService) GetCardholderData(card string) (*ResponseCardholde
 		return nil, errors.New(response.Status.Message)
 	}
 	return &response, nil
+}
+
+func (service *CampusService) GetParamsStatus() error {
+	reply, err := service.MakeRequest(`<Request><GetParamsStatus/></Request>`)
+	if err != nil {
+		glog.Error("Request GetParamsStatus to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request GetParamsStatus from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request GetParamsStatus:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
+
+func (service *CampusService) GetStoplistStatus() error {
+	reply, err := service.MakeRequest(`<Request><GetStoplistStatus/></Request>`)
+	if err != nil {
+		glog.Error("Request GetStoplistStatus to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request GetStoplistStatus from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request GetStoplistStatus:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
 }
 
 func (service *CampusService) GetAuthorisData(card string, period int) ([]Transaction, error) {
