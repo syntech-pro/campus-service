@@ -160,6 +160,17 @@ type ResponseAuthorisData struct {
 	Status       Status
 }
 
+type AvailableRequest struct {
+	Name                string `xml:"Name,attr"`
+	NeedPinVerification string `xml:"NeedPinVerification,attr"`
+}
+
+type ResponseAvailableRequests struct {
+	XMLName           xml.Name `xml:"Response"`
+	AvailableRequests []AvailableRequest
+	Status            Status
+}
+
 type Transaction struct {
 	CampusNumber     string `xml:",attr"`
 	OperCode         string `xml:",attr"`
@@ -634,6 +645,25 @@ func (service *CampusService) GetStoplistStatus() error {
 		return errors.New(response.Status.Message)
 	}
 	return nil
+}
+
+func (service *CampusService) GetAvailableRequests() ([]AvailableRequest, error) {
+	reply, err := service.MakeRequest(`<Request><GetAvailableRequests/></Request>`)
+	if err != nil {
+		glog.Error("Request GetAvailableRequests to campus service failed:", err.Error())
+		return nil, err
+	}
+	response := ResponseAvailableRequests{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request GetAvailableRequests from campus service: %v", err)
+		return nil, err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request GetAvailableRequests:%s Message:%s", response.Status.Code, response.Status.Message)
+		return nil, errors.New(response.Status.Message)
+	}
+	return response.AvailableRequests, nil
 }
 
 func (service *CampusService) GetAuthorisData(card string, period int) ([]Transaction, error) {
