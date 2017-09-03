@@ -750,3 +750,22 @@ func (service *CampusService) FinancialOperation(card, operation, sum, taskid st
 	}
 	return nil
 }
+
+func (service *CampusService) RequestPerso() error {
+	reply, err := service.MakeRequest(`<Request><RequestPerso/></Request>`)
+	if err != nil {
+		glog.Error("Request RequestPerso to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request RequestPerso from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request RequestPerso:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
