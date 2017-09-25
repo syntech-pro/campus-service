@@ -13,6 +13,7 @@ import (
 	"github.com/golang/glog"
 )
 
+// DATA_HEADER_LENGTH is length of data header block in messages
 const DATA_HEADER_LENGTH = 4
 const READ_BUFFER_SIZE = 1024 * 64
 const RESPONSE_BUFFER_SIZE = 1024 * 1024
@@ -73,6 +74,12 @@ type ResponseContactlessReaderStatus struct {
 	XMLName                 xml.Name `xml:"Response"`
 	ContactlessReaderStatus Status
 	Status                  Status
+}
+
+type ResponseRequestPerso struct {
+	XMLName   xml.Name `xml:"Response"`
+	PersoData PersoData
+	Status    Status
 }
 
 type CardBalance struct {
@@ -158,6 +165,14 @@ type ResponseAuthorisData struct {
 	XMLName      xml.Name `xml:"Response"`
 	AuthorisData AuthorisData
 	Status       Status
+}
+
+type PersoData struct {
+	UID            string `xml:",attr"`
+	CampusNumber   string `xml:",attr"`
+	ExpirationDate string `xml:",attr"`
+	KeysetVersion  string `xml:",attr"`
+	MappingVersion string `xml:",attr"`
 }
 
 type AvailableRequest struct {
@@ -756,20 +771,39 @@ func (service *CampusService) FinancialOperation(card, operation, sum, taskid st
 	return nil
 }
 
-func (service *CampusService) RequestPerso() error {
+func (service *CampusService) RequestPerso() (*PersoData, error) {
 	reply, err := service.MakeRequest(`<Request><RequestPerso/></Request>`)
 	if err != nil {
 		glog.Error("Request RequestPerso to campus service failed:", err.Error())
+		return nil, err
+	}
+	response := ResponseRequestPerso{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request RequestPerso from campus service: %v", err)
+		return nil, err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request RequestPerso:%s Message:%s", response.Status.Code, response.Status.Message)
+		return nil, errors.New(response.Status.Message)
+	}
+	return &response.PersoData, nil
+}
+
+func (service *CampusService) MessagePerso(card, uid string) error {
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><MessagePerso CampusNumber=%q UID=%q /></Request>", card, uid))
+	if err != nil {
+		glog.Error("Request MessagePerso to campus service failed:", err.Error())
 		return err
 	}
 	response := ResponseStatus{}
 	err = xml.Unmarshal([]byte(*reply), &response)
 	if err != nil {
-		glog.Errorf("Error parse response of request RequestPerso from campus service: %v", err)
+		glog.Errorf("Error parse response of request MessagePerso from campus service: %v", err)
 		return err
 	}
 	if response.Status.Code != "0" {
-		glog.Errorf("Response status code of request RequestPerso:%s Message:%s", response.Status.Code, response.Status.Message)
+		glog.Errorf("Response status code of request MessagePerso:%s Message:%s", response.Status.Code, response.Status.Message)
 		return errors.New(response.Status.Message)
 	}
 	return nil
