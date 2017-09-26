@@ -571,10 +571,10 @@ func (service *CampusService) SetServerParams() error {
 	return nil
 }
 
-func (service *CampusService) WBRequest(accnum string) error {
-	reply, err := service.MakeRequest(`<Request><WBRequest CampusNumber="` + accnum + `" WBCode="White"/></Request>`)
+func (service *CampusService) WBRequest(card string) error {
+	reply, err := service.MakeRequest(`<Request><WBRequest CampusNumber="` + card + `" WBCode="White"/></Request>`)
 	if err != nil {
-		glog.Errorf("Request WBRequest to campus service for %v failed:%v", accnum, err.Error())
+		glog.Errorf("Request WBRequest to campus service for %v failed:%v", card, err.Error())
 		return err
 	}
 	response := ResponseStatus{}
