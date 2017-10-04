@@ -82,6 +82,12 @@ type ResponseRequestPerso struct {
 	Status    Status
 }
 
+type ResponseRequestRead struct {
+	XMLName  xml.Name `xml:"Response"`
+	CardData CardData
+	Status   Status
+}
+
 type CardBalance struct {
 	XMLName xml.Name `xml:"CardBalance"`
 	Balance string   `xml:",attr"`
@@ -165,6 +171,29 @@ type ResponseAuthorisData struct {
 	XMLName      xml.Name `xml:"Response"`
 	AuthorisData AuthorisData
 	Status       Status
+}
+
+type CardData struct {
+	UID                string `xml:",attr"`
+	CampusNumber       string `xml:",attr"`
+	ExpirationDate     string `xml:",attr"`
+	CardExpirationDate string `xml:",attr"`
+	KeysetVersion      string `xml:",attr"`
+	MappingVersion     string `xml:",attr"`
+	Activated          string `xml:",attr"`
+	Blocked            string `xml:",attr"`
+	TransactionCounter string `xml:",attr"`
+	Balance            string `xml:",attr"`
+	PINPresent         string `xml:",attr"`
+	FiscalOperations   []FiscalOperation
+}
+
+type FiscalOperation struct {
+	Type            string `xml:",attr"`
+	Timestamp       string `xml:",attr"`
+	DeviceId        string `xml:",attr"`
+	OperationNumber string `xml:",attr"`
+	Amount          string `xml:",attr"`
 }
 
 type PersoData struct {
@@ -807,4 +836,23 @@ func (service *CampusService) MessagePerso(card, uid string) error {
 		return errors.New(response.Status.Message)
 	}
 	return nil
+}
+
+func (service *CampusService) Read() (*CardData, error) {
+	reply, err := service.MakeRequest(`<Request><Read/></Request>`)
+	if err != nil {
+		glog.Error("Request Read to campus service failed:", err.Error())
+		return nil, err
+	}
+	response := ResponseRequestRead{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request Read from campus service: %v", err)
+		return nil, err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request Read:%s Message:%s", response.Status.Code, response.Status.Message)
+		return nil, errors.New(response.Status.Message)
+	}
+	return &response.CardData, nil
 }
