@@ -819,6 +819,25 @@ func (service *CampusService) RequestPerso() (*PersoData, error) {
 	return &response.PersoData, nil
 }
 
+func (service *CampusService) Perso(card, pin, uid, expdate, keyset, mapver string) error {
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><Perso CampusNumber=%q PIN=%q UID=%q ExpirationDate=%q KeysetVersion=%q MappingVersion=%q/></Request>", card, pin, uid, expdate, keyset, mapver))
+	if err != nil {
+		glog.Error("Request Perso to campus service failed:", err.Error())
+		return err
+	}
+	response := ResponseStatus{}
+	err = xml.Unmarshal([]byte(*reply), &response)
+	if err != nil {
+		glog.Errorf("Error parse response of request Perso from campus service: %v", err)
+		return err
+	}
+	if response.Status.Code != "0" {
+		glog.Errorf("Response status code of request Perso:%s Message:%s", response.Status.Code, response.Status.Message)
+		return errors.New(response.Status.Message)
+	}
+	return nil
+}
+
 func (service *CampusService) MessagePerso(card, uid string) error {
 	reply, err := service.MakeRequest(fmt.Sprintf("<Request><MessagePerso CampusNumber=%q UID=%q /></Request>", card, uid))
 	if err != nil {
