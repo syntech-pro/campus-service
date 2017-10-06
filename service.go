@@ -821,8 +821,12 @@ func (service *CampusService) RequestPerso() (*PersoData, error) {
 }
 
 func (service *CampusService) Perso(data *PersoData) error {
-	reply, err := service.MakeRequest(fmt.Sprintf("<Request><Perso CampusNumber=%q PIN=%q UID=%q ExpirationDate=%q KeysetVersion=%q MappingVersion=%q/></Request>",
-		data.CampusNumber, data.PIN, data.UID, data.ExpirationDate, data.KeysetVersion, data.MappingVersion))
+	var pin string
+	if data.PIN != "" {
+		pin = fmt.Sprintf("PIN=%q", data.PIN)
+	}
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><Perso CampusNumber=%q %s UID=%q ExpirationDate=%q KeysetVersion=%q MappingVersion=%q/></Request>",
+		data.CampusNumber, pin, data.UID, data.ExpirationDate, data.KeysetVersion, data.MappingVersion))
 	if err != nil {
 		glog.Error("Request Perso to campus service failed:", err.Error())
 		return err
