@@ -202,6 +202,7 @@ type PersoData struct {
 	ExpirationDate string `xml:",attr"`
 	KeysetVersion  string `xml:",attr"`
 	MappingVersion string `xml:",attr"`
+	PIN            string
 }
 
 type AvailableRequest struct {
@@ -819,8 +820,9 @@ func (service *CampusService) RequestPerso() (*PersoData, error) {
 	return &response.PersoData, nil
 }
 
-func (service *CampusService) Perso(card, pin, uid, expdate, keyset, mapver string) error {
-	reply, err := service.MakeRequest(fmt.Sprintf("<Request><Perso CampusNumber=%q PIN=%q UID=%q ExpirationDate=%q KeysetVersion=%q MappingVersion=%q/></Request>", card, pin, uid, expdate, keyset, mapver))
+func (service *CampusService) Perso(data *PersoData) error {
+	reply, err := service.MakeRequest(fmt.Sprintf("<Request><Perso CampusNumber=%q PIN=%q UID=%q ExpirationDate=%q KeysetVersion=%q MappingVersion=%q/></Request>",
+		data.CampusNumber, data.PIN, data.UID, data.ExpirationDate, data.KeysetVersion, data.MappingVersion))
 	if err != nil {
 		glog.Error("Request Perso to campus service failed:", err.Error())
 		return err
